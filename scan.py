@@ -126,7 +126,8 @@ if config.FORCED_KILL is True:
 from monocle.utils import get_address, dump_pickle
 from monocle.worker import Worker
 from monocle.overseer import Overseer
-from monocle import shared
+from monocle.shared import get_logger, SessionManager
+from monocle.db_proc import DB_PROC
 
 class AccountManager(BaseManager):
     pass
@@ -221,7 +222,7 @@ def exception_handler(loop, context):
 
 def main():
     args = parse_args()
-    log = shared.get_logger()
+    log = get_logger()
     if args.status_bar:
         configure_logger(filename=join(config.DIRECTORY, 'scan.log'))
         log.info('-' * 37)
@@ -277,14 +278,15 @@ def main():
         except Exception as e:
             log.exception('A wild {} appeared during exit!', e.__class__.__name__)
 
-        shared.DB.stop()
+        DB_PROC.stop()
 
         try:
-            shared.spawns.update()
+            SPAWNS.update()
         except Exception:
             pass
     finally:
         manager.shutdown()
+        SessionManager.close()
         close_sessions()
 
         try:
